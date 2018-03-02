@@ -4,7 +4,7 @@ from serial import Serial
 from threading import Thread, Event
 
 from .events import *
-from camera.snapshot import concurrent_snapshot
+#from camera.snapshot import concurrent_snapshot
 
 import requests
 
@@ -21,7 +21,10 @@ COMMAND_BUFFER = Queue()
 
 
 # Serial connection
-CONNECTION = Serial(port='/dev/ttyACM0', baudrate=9600)
+# RPI
+#CONNECTION = Serial(port='/dev/ttyACM0', baudrate=9600)
+# MAC
+CONNECTION = Serial(port='/dev/tty.usbmoem1411', baudrate=9600)
 
 
 class EventThread(Thread):
@@ -156,7 +159,8 @@ def alarm_raised(sub):
     # TODO Add HTTP request to localhost:8000, directly to web server
     alarm_status = 'on' if sub == '1' else 'off'
     if alarm_status == 'on':
-        concurrent_snapshot()
+        #concurrent_snapshot()
+        print('Picture!')
 
     requests.get('http://localhost:8000/events/alarm/' + alarm_status)
 
