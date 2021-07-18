@@ -6,9 +6,9 @@ import logging
 
 import hume_storage
 
-from util import args, log
+from util import set_args, set_up_logger_for, HANDLER_STREAM
 from device import application as device
-from dispatch import application as dispatch
+from hc_communication import application as dispatch
 
 
 LOGGER = logging.getLogger(__name__)
@@ -20,63 +20,6 @@ UTIL = [
 APPLICATIONS = [
     device, dispatch
 ]
-
-
-def start():
-    """
-    Starts the RootApp and all its sub-applications.
-    """
-    LOGGER.info("root start")
-
-    # storage start
-    hume_storage.start()
-
-    # model init
-    for app in APPLICATIONS:
-        app.model_init()
-
-    # pre start
-    for app in APPLICATIONS:
-        app.pre_start()
-
-    # app start
-    for app in APPLICATIONS:
-        app.start()
-
-
-def stop():
-    """
-    Stops all RootApp sub-applications in order to clean up used resources.
-    """
-    LOGGER.info("root stop")
-
-    # application stop
-    for app in APPLICATIONS:
-        app.stop()
-
-    # core stop
-    for app in UTIL:
-        app.stop()
-
-    # This must happen last to track application exits
-    log.stop_logging()
-
-    print_exit_status()
-
-
-def print_exit_status():
-    """
-    Health check sort of, to see that resources are released properly when
-    exiting.
-    """
-    print("----------------------------------------------")
-    print("- STOP RESULTS -")
-    print("----------------------------------------------")
-    print("# THREADING")
-    print(f"# Active threads: {threading.active_count()}")
-    print("# List of threads:")
-    for thread in threading.enumerate():
-        print(f"# {thread}")
 
 
 def parse_args():
@@ -101,21 +44,6 @@ def parse_args():
     #
 
     # Testing arguments are prepended with "--test", or "-t" for short.
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-t-dma',
-                       '--test-device-mock-address',
-                       help="Set up a device mock address where all device "
-                            "requests will be routed")
-    group.add_argument('-t-rds',
-                       '--test-run-device-simulator',
-                       help="Run a device simulator, where a single device "
-                            "will attach to the HUME on start and can reply "
-                            "to all standard requests such as: capability, "
-                            "heartbeat, and action",
-                       action='store_true')
-
-    # print("Starting DC with the following arguments:")
-    # print(parser.parse_args())
 
     return parser.parse_args()
 
@@ -146,11 +74,84 @@ def set_up_interrupt():
     signal.signal(signal.SIGTERM, terminate)
 
 
+def set_up_logging():
+    """Sets up DC logging."""
+    set_up_logger_for("DC",
+                      None,
+                      logging.INFO,
+                      HANDLER_STREAM)
+    set_up_logger_for("DC",
+                      "hume_storage",
+                      logging.INFO,
+                      HANDLER_STREAM)
+    set_up_logger_for("DC",
+                      "rabbitmq_client",
+                      logging.INFO,
+                      HANDLER_STREAM)
+
+    pika_logger = logging.getLogger("pika")
+    pika_logger.propagate = False
+
+
+def start():
+    """
+    Starts the RootApp and all its sub-applications.
+    """
+    LOGGER.info("root start")
+
+    # storage start
+    hume_storage.start()
+
+    # model init
+    for app in APPLICATIONS:
+        app.model_init()
+
+    # pre start
+    for app in APPLICATIONS:
+        app.pre_start()
+
+    # app start
+    for app in APPLICATIONS:
+        app.start()
+
+
+def stop():
+    """
+    Stops all RootApp sub-applications in order to clean up used resources.
+    """
+
+    def print_exit_status():
+        """
+        Health check sort of, to see that resources are released properly when
+        exiting.
+        """
+        print("----------------------------------------------")
+        print("- STOP RESULTS -")
+        print("----------------------------------------------")
+        print("# THREADING")
+        print(f"# Active threads: {threading.active_count()}")
+        print("# List of threads:")
+        for thread in threading.enumerate():
+            print(f"# {thread}")
+
+    LOGGER.info("root stop")
+
+    # application stop
+    for app in APPLICATIONS:
+        app.stop()
+
+    # core stop
+    for app in UTIL:
+        app.stop()
+
+    print_exit_status()
+
+
 if __name__ == "__main__":
     cli_args = parse_args()
-    args.set_args(**vars(cli_args))
+    set_args(**vars(cli_args))
 
-    log.set_up_logging()
+    set_up_logging()
 
     # Only set up logging if DC is run standalone and not from HTT. Rely on HTT
     # to set up logging otherwise.

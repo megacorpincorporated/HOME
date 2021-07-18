@@ -3,7 +3,8 @@ import logging
 
 from rabbitmq_client import RMQProducer, QueueParams
 
-from util.args import get_arg, HUME_UUID
+from util import get_arg
+from hc_defs import CLI_HUME_UUID
 
 
 LOGGER = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def init(producer_instance):
 
 def encode_hint_command(command):
     """Formats a HINT command."""
-    command["uuid"] = get_arg(HUME_UUID)
+    command["uuid"] = get_arg(CLI_HUME_UUID)
     return json.dumps(command)
 
 

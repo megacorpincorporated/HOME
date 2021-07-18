@@ -1,12 +1,8 @@
 import logging
 import requests
 
-from util.args import (
-    get_arg,
-    HINT_IP_ADDRESS,
-    HINT_PORT,
-    HUME_UUID
-)
+from util import get_arg
+from hc_defs import CLI_HINT_IP_ADDRESS, CLI_HINT_PORT, CLI_HUME_UUID
 from hint.models import HumeUser
 
 
@@ -21,14 +17,14 @@ This module provides functions for sending HTTP requests to HINT.
 def _hint_api_url():
     """Returns the HINT API URL."""
     return "http://" + \
-           get_arg(HINT_IP_ADDRESS) + \
-           ':' + str(get_arg(HINT_PORT)) + \
+           get_arg(CLI_HINT_IP_ADDRESS) + \
+           ':' + str(get_arg(CLI_HINT_PORT)) + \
            "/api/"
 
 
 def pair():
     """
-    Pairing procedure. Login will follow a successful pairing.
+    Send a pairing request.
 
     :returns: result of the pairing request, None if failed
     :rtype: dict | None
@@ -36,7 +32,7 @@ def pair():
     LOGGER.info("sending pairing request")
 
     response = requests.post(_hint_api_url() + "humes/",
-                             json={"uuid": get_arg(HUME_UUID)})
+                             json={"uuid": get_arg(CLI_HUME_UUID)})
 
     if response.status_code == requests.codes.created:
         response_content = response.json()  # Contains login information.
@@ -48,7 +44,7 @@ def pair():
     else:
         # Either format error (caused by what?) or UUID taken. Either case,
         # severe error
-        LOGGER.error("paring failed")
+        LOGGER.critical("paring request failed")
 
 
 def login(hume_user: HumeUser):

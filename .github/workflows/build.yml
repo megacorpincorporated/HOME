@@ -55,17 +55,8 @@ jobs:
     # Run tests
     #
 
-    - name: Run DC unit tests
+    - name: Run tests
       run: |
-        cd dc && coverage run -m unittest discover
+        ./manage.py test
 
-    - name: Run HC unit tests
-      run: |
-        cd hc && coverage run -m unittest discover
-
-    - name: Run HUME unit tests
-      run: |
-        coverage run -m unittest tests.test_stuff
-
-    # TODO: Add integration tests
     # TODO: Add "fail under" clause: coverage report -m --fail-under 96
